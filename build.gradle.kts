@@ -1,26 +1,9 @@
-
-buildscript {
-    repositories {
-        gradlePluginPortal()
-        jcenter()
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.30")
-        classpath("com.android.tools.build:gradle:4.0.2")
-    }
+plugins {
+    // this is necessary to avoid the plugins to be loaded multiple times
+    // in each subproject's classloader
+    alias(libs.plugins.androidApplication) apply false
+    alias(libs.plugins.androidLibrary) apply false
+    alias(libs.plugins.jetbrainsCompose) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.kotlinMultiplatform) apply false
 }
-
-
-group = "universe.constellation.fractal"
-version = "1.0"
-
-allprojects {
-    repositories {
-        jcenter()
-        mavenCentral()
-        maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
-    }
-}
-
