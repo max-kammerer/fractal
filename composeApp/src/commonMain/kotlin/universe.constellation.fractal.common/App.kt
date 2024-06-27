@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.translate
@@ -25,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.system.measureTimeMillis
 
 private var counter = 0
@@ -48,7 +46,7 @@ fun App() {
 
                 Row(modifier = Modifier.padding(1.dp).weight(1.0F, true)) {
                     Column {
-                        TextField(topY, { topY = it }, label = { Text("Top y") })
+                        TextField(topY, { topY = it }, label = { Text("Top Y") })
                         TextField(bottomY, { bottomY = it }, label = { Text("Bottom Y") })
 
                     }
@@ -61,14 +59,14 @@ fun App() {
                     }
                 }
 
-                Button(modifier = Modifier.align(Alignment.CenterVertically), onClick = {
+                Button(modifier = Modifier.align(alignment = Alignment.CenterVertically), onClick = {
                     GlobalScope.launch {
-                        println("xxx: " + bitmapWidth.toDouble() + " " + bitmapHeight.toDouble())
+                        println("info: " + bitmapWidth.toDouble() + " " + bitmapHeight.toDouble())
                         image = calc(
                             bitmapWidth.toDouble(),
                             bitmapHeight.toDouble(),
-                            Complex(leftX.toDouble(), bottomY.toDouble()),
-                            Complex(rightX.toDouble(), topY.toDouble())
+                            ComplexNumber(leftX.toDouble(), bottomY.toDouble()),
+                            ComplexNumber(rightX.toDouble(), topY.toDouble())
                         )
                     }
 
@@ -102,7 +100,7 @@ fun App() {
     }
 }
 
-private fun calc(renderWidth: Double, renderHeight: Double, leftBottom: Complex, rightTop: Complex): ImageBitmap {
+private fun calc(renderWidth: Double, renderHeight: Double, leftBottom: ComplexNumber, rightTop: ComplexNumber): ImageBitmap {
     val workingBitmap = ImageBitmap(bitmapWidth, bitmapHeight)
     val canvas = Canvas(workingBitmap)
     canvas.drawRect(0f, 0f, workingBitmap.width.toFloat(), workingBitmap.height.toFloat(), paint = Paint().apply {
@@ -112,7 +110,7 @@ private fun calc(renderWidth: Double, renderHeight: Double, leftBottom: Complex,
     return workingBitmap
 }
 
-private fun Canvas.calc(renderWidth: Double, renderHeight: Double, leftBottom: Complex, rightTop: Complex) {
+private fun Canvas.calc(renderWidth: Double, renderHeight: Double, leftBottom: ComplexNumber, rightTop: ComplexNumber) {
     println("render $renderWidth $renderHeight")
     val dist = rightTop - leftBottom
 
@@ -135,79 +133,4 @@ private fun Canvas.calc(renderWidth: Double, renderHeight: Double, leftBottom: C
             z * z + c
         }
     })
-}
-
-class Scene(val xOffset: Int, val yOffset: Int, val width: Float, val height: Float, val iterations: Int) {
-
-    private val paint = Paint()
-
-    fun draw(scope: Canvas, x: Int, y: Int, type: Int) {
-        val color = when (type) {
-            -1 -> Color.Black
-            -2 -> {
-                Color.Blue
-            }
-            else -> {
-                val blue = (0xFF * 1.0 * (iterations - min(10 * type, iterations)) / iterations).toInt()
-                //println("""$type $blue""")
-                Color(red = blue, green = blue, blue = blue)
-            }
-        }
-        val invertedY = height - (yOffset + y.toFloat())
-        scope.drawRect(
-            Rect(
-                Offset(xOffset + x.toFloat(), invertedY),
-                Offset(xOffset + x.toFloat() + 1, invertedY + 1)
-            ), paint.apply { this.color = color })
-    }
-}
-
-fun mandelbrot(
-    leftDown: Complex,
-    rightTop: Complex,
-    step: Double = 0.01,
-    iterations: Int = 200,
-    dotConsumer: (Int, Int, Int) -> Unit,
-    f: (Complex, Complex) -> Complex
-) {
-    var currentReal = leftDown.real
-    var realIteration = 0
-
-    val stopReal = rightTop.real
-    while (currentReal <= stopReal) {
-        var currentImage = leftDown.image
-        val stopImage = rightTop.image
-        var imageIteration = 0
-        while (currentImage <= stopImage) {
-            var currentValue = Complex(currentReal, currentImage)
-            val point = Complex(currentReal, currentImage)
-            var newValue = currentValue
-            var color = 0
-            for (i in 0 until iterations) {
-                color = i
-                newValue = f(currentValue, point)
-                //if (newValue.dist(currentValue) <= epsilon) break
-
-                if (newValue.dist() > 2) break
-                currentValue = newValue
-            }
-            val type = when {
-                newValue.dist() <= 2 -> {
-                    -1
-                }
-                currentValue.dist().isFinite() -> {
-                    color
-                }
-                else -> {
-                    -2
-                }
-            }
-
-            dotConsumer(realIteration, imageIteration, type)
-            currentImage += step
-            imageIteration++
-        }
-        currentReal += step
-        realIteration++
-    }
 }
